@@ -14,6 +14,7 @@ defmodule VintageNet.PowerManager.Supervisor do
     power_managers = Application.get_env(:vintage_net, :power_managers)
 
     children = [
+      {Registry, keys: :unique, name: VintageNet.PowerManager.Registry},
       VintageNet.InterfacesSupervisor
     ]
 
