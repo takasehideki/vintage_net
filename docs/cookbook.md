@@ -187,6 +187,83 @@ See the
 for an example of a project that uses AP mode and a web server for WiFi
 configuration.
 
+###
+
+Mesh WiFi
+
+Some WiFi modules can be run in 80211s mesh mode. This can be
+used to share a single internet connection across a mesh 
+network. One one device with Internet access via ethernet:
+
+```elixir
+mesh0_config = %{
+  type: VintageNetWiFi,
+  vintage_net_wifi: %{
+    user_mpm: 1,
+    # mesh creates a "virtual" interface based on
+    # this interface name
+    root_interface: "wlan0",
+    networks: [
+      %{
+        key_mgmt: :sae,
+        sae_password: "super secret mesh password",
+        ssid: "my-mesh",
+        frequency: 2432,
+        mode: :mesh
+      }
+    ]
+  },
+  # we don't need an ip address on the mesh interface
+  ipv4: %{method: :disabled},
+}
+
+# Bridge configured to bridge eth0 and mesh0 together
+br0_config = %{
+  type: VintageNetBridge,
+  ipv4: %{method: :dhcp},
+  vintage_net_bridge: %{
+    interfaces: ["eth0", "mesh0"]
+  }
+}
+
+eth0_config = %{
+  type: VintageNetEthernet,
+  # the bridge handles ip addressing
+  ipv4: %{method: :disabled},
+}
+
+VintageNet.configure("mesh0", mesh0_config)
+VintageNet.configure("br0", br0_config)
+VintageNet.configure("eth0", eth0_config)
+```
+
+and on the device who will share that connection:
+
+```elixir
+mesh0_config = %{
+  type: VintageNetWiFi,
+  vintage_net_wifi: %{
+    user_mpm: 1,
+    # mesh creates a "virtual" interface based on
+    # this interface name
+    root_interface: "wlan0",
+    networks: [
+      %{
+        key_mgmt: :sae,
+        sae_password: "super secret mesh password",
+        ssid: "my-mesh",
+        frequency: 2432,
+        mode: :mesh
+      }
+    ]
+  },
+  # the mesh is bridged on the other
+  # device, so we can use dhcp now
+  ipv4: %{method: :dhcp},
+}
+VintageNet.configure("mesh0", mesh0_config)
+```
+
 ## Network interaction
 
 ### Share WAN with other networks
